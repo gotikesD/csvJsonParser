@@ -1,0 +1,15 @@
+[
+{
+  "book": {
+    "id": "id1",
+    "title": "title1"
+  },
+  "authors": [
+    {
+      "id": "id4",
+      "firstName": "firstName4",
+      "lastName": "lastName4"
+    }
+  ]
+}
+]
