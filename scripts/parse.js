@@ -49,21 +49,21 @@ function writeBooks() {
       bookReadStream
       .pipe(csv2json())
       .on('data', (data) => {
-          bookReadStream.pause();
+          if(!bookReadStream.isPaused()) {
+             bookWriteStream.write(data.toString()) 
+          }
+
           if(!bookToAuthorsChunk.book) {
-            bookReadStream.resume()
-            bookWriteStream.write(data.toString()) 
-            if(data.toString().indexOf('{') === 0) {
+            if(data.toString().indexOf('{') === 0) {    
               bookToAuthorsChunk.book = JSON.parse(data.toString()) 
             }
           }
 
           if(bookToAuthorsChunk.book) {
-               bookReadStream.pause();
+            bookReadStream.pause()
+            detectFullfieldData()
+            
           }
-
-       
-           
       })
       .on('finish', () => {
         resolve()
@@ -76,22 +76,18 @@ function writeAuthors() {
     authorsReadStream.pipe(csv2json())
     .on('data', (data) => {
 
-        authorsReadStream.pause();
-
-        if(authorsTemp.length != 5) {
-          authorsWriteStream.write(data.toString()) 
-          authorsReadStream.resume();
+        if(!authorsReadStream.isPaused()) {
+             authorsWriteStream.write(data.toString()) 
         }
 
-        if(authorsTemp.length === 5 && bookToAuthorsChunk.book) {
+        if(authorsTemp.length < 5 &&  data.toString().indexOf('{') === 0 ) {
+          authorsTemp.push(JSON.parse(data.toString()))
+        }
+
+        if(authorsTemp.length === 5) {
+          authorsReadStream.pause()
           detectFullfieldData()
-        }
-        
-        if(data.toString().indexOf('{') === 0 && authorsTemp.length <= 5) { 
-            authorsTemp.push(JSON.parse(data.toString()))
-        }
-  
-       
+        }   
     })
     .on('finish', () => {
       resolve()
@@ -100,48 +96,64 @@ function writeAuthors() {
 }
 
   
-
-
-	
-
-  
-
 function detectFullfieldData() {
 
-      console.log(bookToAuthorsChunk)
-      // if(authorsTemp.length === 5 ) {
-      //   authorsReadStream.pause()
-    
-      //   console.log(bookToAuthorsChunk)
+         if(bookToAuthorsChunk.book) {
+            if(authorsTemp.length < 5) {
+              bookReadStream.pause()
+              authorsReadStream.resume()
+            } else {
+              authorsTemp = []
+              console.log(bookToAuthorsChunk.book)
+              bookToAuthorsChunk.book = null
+            }
+          } else {
+              bookReadStream.resume()
+          }
 
-      // }
-      bookToAuthorsChunk.book = null
-      // if(bookToAuthorsChunk.book && bookToAuthorsChunk.authors.length) {
-      //   console.log(bookToAuthorsChunk)
-      // }
-      // let arrayLength =  Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+        //  const addNewLine = chunkCounter ? ',\n' : '';
+        //  if(bookToAuthorsChunk.book) {
 
-      // while(bookToAuthorsChunk.authors.length <= arrayLength) {
-      //   let index = Math.floor(Math.random() * (authorsTemp.length - 1)) + 1;
-      //   let elem = authorsTemp.splice(index, 1);
-      //   bookToAuthorsChunk.authors.push(elem[0]);
-      // }    
+        //     bookToAuthorsWriteStream.write(`${addNewLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`, () => {
+        //       console.log(bookToAuthorsChunk)
+        //       // bookToAuthorsChunk = {
+        //       //   book : null,
+        //       //   authors : []
+        //       // }
+               
+        //     }) 
+           
+        //     chunkCounter++;
+        //  }
+         
+        // }
 
-      // console.log(bookToAuthorsChunk)
+        
+        // if(authorsTemp.length === 5 ) {
+        //   bookToAuthorsChunk.authors = authorsTemp
+        // }
+        // bookToAuthorsChunk.book = null
 
-      // bookToAuthorsChunk = {
-      //   book : null,
-      //   authors : []
-      // }
+   
+        // bookToAuthorsChunk.book = null
+        // if(bookReadStream.isPaused()) {
+        //   bookReadStream.resume()
+        // }
+        // if(authorsReadStream.isPaused()) {
+        //   authorsReadStream.resume()
+        // }
+      //  let arrayLength =  Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+      //   while(bookToAuthorsChunk.authors.length <= arrayLength) {
+      //     let index = Math.floor(Math.random() * (authorsTemp.length - 1)) + 1;
+      //     let elem = authorsTemp.splice(index, 1);
+      //     bookToAuthorsChunk.authors.push(elem[0]);
+      //    }
+      //    const addNewLine = chunkCounter ? ',\n' : '';
+      //    bookToAuthorsWriteStream.write(`${addNewLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`) 
+      //    chunkCounter++;
 
-
+      //  } 
       
-      // const addNewLine = chunkCounter ? ',\n' : '';
-      // bookToAuthorsWriteStream.write(`${addNewLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`)
-      // console.log('BOOKS_AUTHORS CHUNK  ',bookToAuthorsChunk)
-      // chunkCounter++;
+}
 
 
-      // authorsReadStream.resume();
-      // bookReadStream.resume()
-  }
