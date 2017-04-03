@@ -16,11 +16,11 @@ let authorsCounter = 0;
 const interval = setInterval(() => { 
   
 	let mem = startMemoryCheck()
-  console.log(`Memory used - ${mem}`)
+    console.log(`Memory used - ${mem}`);
 	if(mem > MAX_MEMORY_USAGE) {
-    console.log('Max memory usage reached!')
-    interval.unref()
-    process.exit()
+    console.log('Max memory usage reached!');
+    interval.unref();
+    process.exit();
 	}
 } , CONSOLE_CYCLE)
 

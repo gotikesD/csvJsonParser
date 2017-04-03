@@ -35,14 +35,13 @@ bookToAuthorsWriteStream.write('[\n', 'utf-8')
 
 
 
-Promise.all([writeBooks(), writeAuthors()])
+Promise.all([ writeAuthors() , writeBooks()])
        .then(() => {
-
-        console.timeEnd('Parsing Script Working Time');
-        console.log('Generating JSON finished!')
-        bookToAuthorsWriteStream.write('\n]', 'utf-8')
-        interval.unref()
-       })
+          console.timeEnd('Parsing Script Working Time');
+          console.log('Generating JSON finished!');
+          bookToAuthorsWriteStream.write('\n]', 'utf-8');
+          interval.unref()
+       });
 
 
 function writeBooks() {
@@ -50,17 +49,21 @@ function writeBooks() {
       bookReadStream
       .pipe(csv2json())
       .on('data', (data) => {
-
-          if(bookToAuthorsChunk.book) {
-            bookReadStream.pause()
-            detectFullfieldData()
-          } else {
+          bookReadStream.pause();
+          if(!bookToAuthorsChunk.book) {
+            bookReadStream.resume()
+            bookWriteStream.write(data.toString()) 
             if(data.toString().indexOf('{') === 0) {
               bookToAuthorsChunk.book = JSON.parse(data.toString()) 
             }
           }
 
-          bookWriteStream.write(data.toString())  
+          if(bookToAuthorsChunk.book) {
+               bookReadStream.pause();
+          }
+
+       
+           
       })
       .on('finish', () => {
         resolve()
@@ -72,17 +75,23 @@ function writeAuthors() {
   return new Promise((resolve, reject) => {
     authorsReadStream.pipe(csv2json())
     .on('data', (data) => {
-        
-        if(authorsTemp.length === 5) {
-          authorsReadStream.pause()
-          detectFullfieldData()
-        } else {
-           if(data.toString().indexOf('{') === 0) { 
-            authorsTemp.push(JSON.parse(data.toString()))
-          }
+
+        authorsReadStream.pause();
+
+        if(authorsTemp.length != 5) {
+          authorsWriteStream.write(data.toString()) 
+          authorsReadStream.resume();
         }
+
+        if(authorsTemp.length === 5 && bookToAuthorsChunk.book) {
+          detectFullfieldData()
+        }
+        
+        if(data.toString().indexOf('{') === 0 && authorsTemp.length <= 5) { 
+            authorsTemp.push(JSON.parse(data.toString()))
+        }
+  
        
-        authorsWriteStream.write(data.toString()) 
     })
     .on('finish', () => {
       resolve()
@@ -99,26 +108,40 @@ function writeAuthors() {
 
 function detectFullfieldData() {
 
-  	if(bookToAuthorsChunk.book && authorsTemp.length === 5) {
+      console.log(bookToAuthorsChunk)
+      // if(authorsTemp.length === 5 ) {
+      //   authorsReadStream.pause()
     
-      let arrayLength =  Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+      //   console.log(bookToAuthorsChunk)
 
-      while(bookToAuthorsChunk.authors.length < arrayLength) {
-        let index = Math.floor(Math.random() * (authorsTemp.length - 1)) + 1;
-        let elem = authorsTemp.splice(index, 1);
-        bookToAuthorsChunk.authors.push(elem[0])
-      }
+      // }
+      bookToAuthorsChunk.book = null
+      // if(bookToAuthorsChunk.book && bookToAuthorsChunk.authors.length) {
+      //   console.log(bookToAuthorsChunk)
+      // }
+      // let arrayLength =  Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+
+      // while(bookToAuthorsChunk.authors.length <= arrayLength) {
+      //   let index = Math.floor(Math.random() * (authorsTemp.length - 1)) + 1;
+      //   let elem = authorsTemp.splice(index, 1);
+      //   bookToAuthorsChunk.authors.push(elem[0]);
+      // }    
+
+      // console.log(bookToAuthorsChunk)
+
+      // bookToAuthorsChunk = {
+      //   book : null,
+      //   authors : []
+      // }
+
 
       
-      const addNewLine = chunkCounter ? ',\n' : '';
-      bookToAuthorsWriteStream.write(`${addNewLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`)
-      console.log('BOOKS_AUTHORS CHUNK  ',bookToAuthorsChunk)
-      chunkCounter++;
-      bookToAuthorsChunk = {
-        book : null,
-        authors : []
-      }
-      bookReadStream.resume()
-      authorsReadStream.resume()
-      }
+      // const addNewLine = chunkCounter ? ',\n' : '';
+      // bookToAuthorsWriteStream.write(`${addNewLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`)
+      // console.log('BOOKS_AUTHORS CHUNK  ',bookToAuthorsChunk)
+      // chunkCounter++;
+
+
+      // authorsReadStream.resume();
+      // bookReadStream.resume()
   }
