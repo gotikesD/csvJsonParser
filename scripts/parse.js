@@ -6,16 +6,31 @@ const bookReadStream = fs.createReadStream('../generated/csv/books.csv');
 const authorReadStream = fs.createReadStream('../generated/csv/authors.csv');
 const bookToAuthorsWriteStream = fs.createWriteStream('../generated/json/bookToAuthors.json');
 
+
+const { startMemoryCheck } = require('../utils/memory.js')
+
+const csv = require('csv-streamify')
+
+
+const interval = setInterval(() => { 
+	let mem = startMemoryCheck()
+    console.log(`Memory used - ${mem}`);
+} , 300).unref();
+  
+
 let authorsTemp = [];
 let bookToAuthorsChunk = {
   book : null,
   authors : []
 }
+let linesCount = 0;
 
 Promise.all([ generateBooks(), generateAuthors() ])
        .then(() => {
-          Promise.all([ readBooks(), readAuthors() ])
+          bookToAuthorsWriteStream.write(`[\n`)
+          Promise.all([ readAuthors(),readBooks()  ])
                  .then(() => {
+                   bookToAuthorsWriteStream.write(`\n]`)
                    console.log('Finished')
                  })
                  .catch((e) => {
@@ -29,47 +44,62 @@ Promise.all([ generateBooks(), generateAuthors() ])
 
 function readBooks() {
   return new Promise((resolve, reject) => {
-      bookReadStream
-      .pipe(csv2json())
+      const newBookReadStream = bookReadStream.pipe(csv2json())
+
+      newBookReadStream
       .on('data', (data) => {
-        if(!bookToAuthorsChunk.book) {
-          if(data.toString().indexOf('{') === 0 ) {
-            bookToAuthorsChunk.book = JSON.parse(data.toString())
-          }
+
+        if(bookToAuthorsChunk.book) {    
+          newBookReadStream.pause()
         }
 
-        if(bookToAuthorsChunk.book) {
-          bookReadStream.pause()
-          detectData()
-        }
+        if(!bookToAuthorsChunk.book) {
+              if(data.toString().indexOf('{') === 0 ) {
+                  bookToAuthorsChunk.book = JSON.parse(data.toString())
+                  detectData()
+                  newBookReadStream.resume()
+              }
+          }
+
+        
+
       })
       .on('finish', () => {
+         console.log('FINISH BOOKS')
         resolve()
+      })
+      .on('end', () => {
+         console.log('END FINISH BOOKS')
+        
       })
       .on('error', (e) => {
         reject(e)
       })
     })
 }
+
 
 
 function readAuthors() {
   return new Promise((resolve, reject) => {
-      authorReadStream
-      .pipe(csv2json())
+    const newAuthorsReadStream = authorReadStream.pipe(csv2json());
+    newAuthorsReadStream
       .on('data', (data) => {
-        if(authorsTemp.length < 5) {
-          if(data.toString().indexOf('{') === 0 ) {
-            authorsTemp.push(JSON.parse(data.toString()))
-          }
+
+        if(authorsTemp.length === 5) {  
+          newAuthorsReadStream.pause()
+          detectData()
+          newAuthorsReadStream.resume()        
         }
 
-        if(authorsTemp.length === 5) {
-          authorReadStream.pause()
-          detectData()
+        if(authorsTemp.length < 5 && !newAuthorsReadStream.isPaused()) {
+          if(data.toString().indexOf('{') === 0 ) {
+            authorsTemp.push(JSON.parse(data.toString()))    
+          }
         }
       })
       .on('finish', () => {
+        console.log('FINISH AUTHORS')
         resolve()
       })
       .on('error', (e) => {
@@ -79,27 +109,29 @@ function readAuthors() {
 }
 
 
+function detectBooks() {
+  if(bookToAuthorsChunk.book) {
+    
+  }
+}
 
 
 
-
-function detectData() {
-  if(bookReadStream.isPaused() && authorReadStream.isPaused()) {
-     console.log('!')
-    let arrayLength =  Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+function detectData() {   
+  if(bookToAuthorsChunk.book && authorsTemp.length === 5) {
+    let arrayLength =  Math.round(Math.random() * (4));
     while(bookToAuthorsChunk.authors.length <= arrayLength) {
-      let index = Math.floor(Math.random() * (authorsTemp.length - 1)) + 1;
+      let index = Math.round(Math.random() * (authorsTemp.length - 1));
       let elem = authorsTemp.splice(index, 1);
       bookToAuthorsChunk.authors.push(elem[0]);
     }
-    bookToAuthorsWriteStream.write(`\n,${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`, () => {
+      let newLine = linesCount ? ',\n' : ''
+      bookToAuthorsWriteStream.write(`${newLine}${JSON.stringify(bookToAuthorsChunk, null , 2, 'utf-8')}`)
       bookToAuthorsChunk = {
         book : null,
         authors : []
       };
-      bookReadStream.resume()
-      authorReadStream.resume()
-    }) 
+      linesCount += 1; 
   }
 }
 
