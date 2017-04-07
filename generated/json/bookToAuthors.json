@@ -6,9 +6,9 @@
   },
   "authors": [
     {
-      "id": "id4",
-      "firstName": "firstName4",
-      "lastName": "lastName4"
+      "id": "id1",
+      "firstName": "firstName1",
+      "lastName": "lastName1"
     },
     {
       "id": "id2",
@@ -16,14 +16,14 @@
       "lastName": "lastName2"
     },
     {
+      "id": "id5",
+      "firstName": "firstName5",
+      "lastName": "lastName5"
+    },
+    {
       "id": "id3",
       "firstName": "firstName3",
       "lastName": "lastName3"
-    },
-    {
-      "id": "id1",
-      "firstName": "firstName1",
-      "lastName": "lastName1"
     }
   ]
 },
@@ -34,14 +34,83 @@
   },
   "authors": [
     {
-      "id": "id2027",
-      "firstName": "firstName2027",
-      "lastName": "lastName2027"
+      "id": "id6",
+      "firstName": "firstName6",
+      "lastName": "lastName6"
     },
     {
-      "id": "id2025",
-      "firstName": "firstName2025",
-      "lastName": "lastName2025"
+      "id": "id7",
+      "firstName": "firstName7",
+      "lastName": "lastName7"
+    },
+    {
+      "id": "id8",
+      "firstName": "firstName8",
+      "lastName": "lastName8"
+    },
+    {
+      "id": "id4",
+      "firstName": "firstName4",
+      "lastName": "lastName4"
+    }
+  ]
+},
+{
+  "book": {
+    "id": "id3",
+    "title": "title3"
+  },
+  "authors": [
+    {
+      "id": "id11",
+      "firstName": "firstName11",
+      "lastName": "lastName11"
+    },
+    {
+      "id": "id13",
+      "firstName": "firstName13",
+      "lastName": "lastName13"
+    },
+    {
+      "id": "id10",
+      "firstName": "firstName10",
+      "lastName": "lastName10"
+    }
+  ]
+},
+{
+  "book": {
+    "id": "id4",
+    "title": "title4"
+  },
+  "authors": [
+    {
+      "id": "id12",
+      "firstName": "firstName12",
+      "lastName": "lastName12"
+    }
+  ]
+},
+{
+  "book": {
+    "id": "id5",
+    "title": "title5"
+  },
+  "authors": [
+    {
+      "id": "id14",
+      "firstName": "firstName14",
+      "lastName": "lastName14"
+    },
+    {
+      "id": "id15",
+      "firstName": "firstName15",
+      "lastName": "lastName15"
+    },
+    {
+      "id": "id17",
+      "firstName": "firstName17",
+      "lastName": "lastName17"
     }
   ]
 }
